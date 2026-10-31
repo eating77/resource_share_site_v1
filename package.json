@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "pages:build": "node scripts/pages-build.mjs",
-    "pages:preview": "node scripts/pages-build.mjs && wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat"
+    "pages:preview": "node scripts/pages-build.mjs && wrangler pages dev .vercel/output/static --compatibility-flag=nodejs_compat",
+    "pages:deploy": "node scripts/pages-build.mjs && wrangler pages deploy --branch=feat/cloudflare-workers --commit-dirty=true"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

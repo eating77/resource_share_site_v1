@@ -1,0 +1,7 @@
+# Cloudflare Pages 项目配置（next-on-pages 直传部署）
+# 说明：此文件仅用于 `wrangler pages deploy`，不包含任何密钥。
+# compatibility_flags / compatibility_date 会在部署时同步到 Pages 项目的运行时配置。
+name = "resource-share-site-pages"
+pages_build_output_dir = ".vercel/output/static"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
