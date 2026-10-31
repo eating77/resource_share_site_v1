@@ -52,3 +52,6 @@ dev-server.err.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 本地日志
+*.log
