@@ -1,0 +1,3 @@
+# 带内容哈希的构建产物，一年不可变缓存（OpenNext 官方推荐）
+/_next/static/*
+  Cache-Control: public,max-age=31536000,immutable

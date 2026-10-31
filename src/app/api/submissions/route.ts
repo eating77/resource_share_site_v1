@@ -37,8 +37,10 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const resourceId = typeof body?.resourceId === "string" ? body.resourceId.slice(0, 64) : "";
-    const rawUrls = Array.isArray(body?.imageUrls)
-      ? body.imageUrls.filter((u: unknown) => typeof u === "string").map((u: string) => u.slice(0, 2048))
+    const rawUrls: string[] = Array.isArray(body?.imageUrls)
+      ? (body.imageUrls as unknown[])
+          .filter((u): u is string => typeof u === "string")
+          .map((u) => u.slice(0, 2048))
       : [];
     if (!resourceId) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
     if (rawUrls.length === 0) return NextResponse.json({ ok: false, error: "请先上传截图" }, { status: 400 });
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 去重：避免用同一张图重复计数
-    const imageUrls = Array.from(new Set(rawUrls));
+    const imageUrls: string[] = Array.from(new Set(rawUrls));
     const result = await createSubmission({ resourceId, userKey: visitor, imageUrls });
     const res = NextResponse.json({ ok: true, data: result });
     if (freshVisitor) res.cookies.set(visitorCookie(visitor));

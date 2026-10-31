@@ -5,10 +5,11 @@ import { isApproved } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 /** 查询当前访客对该资源是否已满足领取条件（用于刷新页面后恢复任务状态） */
-export async function GET(_request: Request, ctx: { params: { id: string } }) {
+export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
-    let visitor = getVisitorKey();
-    const approved = await isApproved(ctx.params.id, visitor || "__nobody__");
+    const { id } = await ctx.params;
+    const visitor = getVisitorKey();
+    const approved = await isApproved(id, visitor || "__nobody__");
     const res = NextResponse.json({ ok: true, approved });
     if (!visitor) {
       res.cookies.set(visitorCookie(makeVisitorKey()));

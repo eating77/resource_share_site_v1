@@ -4,9 +4,10 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function CategoryPage({ params }: { params: { id: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const [settings, categories] = await Promise.all([getSiteSettingsCached(), listCategories()]);
-  const category = categories.find((c) => c.id === params.id);
+  const category = categories.find((c) => c.id === id);
   if (!category) notFound();
   const resources = await listResources({ categoryId: category.id, publishedOnly: true, limit: 100 });
 

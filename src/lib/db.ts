@@ -708,6 +708,25 @@ export type ResourceListOptions = {
   limit?: number;
 };
 
+/**
+ * 运行时护栏：生产环境必须配置 Supabase。
+ *
+ * 原因：演示模式依赖本地文件系统（fs 写入）与 Node 的 scrypt，
+ * 而 Cloudflare Workers 的文件系统是只读的、workerd 也不提供 scryptSync。
+ * 漏配环境变量时若继续走演示分支，会在初始化管理员密码时抛出难以理解的 TypeError。
+ * 这里提前拦截并给出可操作的提示。
+ *
+ * 排除构建阶段（NEXT_PHASE=phase-production-build），避免本地无 .env 时构建被误伤。
+ */
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+if (process.env.NODE_ENV === "production" && !isBuildPhase && !isSupabaseConfigured()) {
+  throw new Error(
+    "[配置缺失] 生产环境未配置 Supabase：请在部署平台同时设置构建期与运行时的 " +
+      "NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY（后台写操作还需 " +
+      "SUPABASE_SERVICE_ROLE_KEY）。演示模式依赖本地文件系统，无法在 Cloudflare Workers 上运行。"
+  );
+}
+
 const ops = isSupabaseConfigured() ? supabaseOps : demoOps;
 
 export const getSiteSettings = ops.getSiteSettings.bind(ops);

@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { cookies, type UnsafeUnwrappedCookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabase, isSupabaseConfigured } from "./supabase";
 import { demoCheckToken, demoSetToken, demoVerifyPassword } from "./demo-store";
@@ -37,7 +37,7 @@ export async function getAdminEmail(): Promise<string | null> {
     }
   }
   if (!demoModeAllowed()) return null;
-  const token = cookies().get(ADMIN_COOKIE)?.value;
+  const token = (cookies() as unknown as UnsafeUnwrappedCookies).get(ADMIN_COOKIE)?.value;
   return demoCheckToken(token) ? "admin@demo.local" : null;
 }
 
@@ -110,7 +110,7 @@ export async function adminLogout() {
 
 /** 获取当前匿名用户标识（领取流程用），无则创建 */
 export function getVisitorKey(): string {
-  const store = cookies();
+  const store = cookies() as unknown as UnsafeUnwrappedCookies;
   const existing = store.get(VID_COOKIE)?.value;
   if (existing) return existing;
   return "";

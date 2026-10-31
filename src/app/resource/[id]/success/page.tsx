@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 type ClaimData = { title: string; driveUrl: string };
 
-export default function SuccessPage({ params }: { params: { id: string } }) {
+export default function SuccessPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [claim, setClaim] = useState<ClaimData | null>(null);
   const [error, setError] = useState("");
@@ -15,13 +16,13 @@ export default function SuccessPage({ params }: { params: { id: string } }) {
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/resources/${params.id}/claim`, { method: "POST", cache: "no-store" });
+        const res = await fetch(`/api/resources/${id}/claim`, { method: "POST", cache: "no-store" });
         const d = await res.json();
         if (!alive) return;
         if (res.ok && d.ok && d.data) {
           setClaim(d.data);
         } else if (res.status === 403) {
-          router.replace(`/resource/${params.id}/task`);
+          router.replace(`/resource/${id}/task`);
           return;
         } else {
           setError(d.error || "领取信息获取失败");
@@ -35,7 +36,7 @@ export default function SuccessPage({ params }: { params: { id: string } }) {
     return () => {
       alive = false;
     };
-  }, [params.id, router]);
+  }, [id, router]);
 
   return (
     <main className="task-page">
@@ -48,7 +49,7 @@ export default function SuccessPage({ params }: { params: { id: string } }) {
         {error && (
           <div className="empty">
             <p>{error}</p>
-            <Link className="submit-button" href={`/resource/${params.id}`} style={{ display: "inline-block", marginTop: 16 }}>
+            <Link className="submit-button" href={`/resource/${id}`} style={{ display: "inline-block", marginTop: 16 }}>
               返回资源详情
             </Link>
           </div>

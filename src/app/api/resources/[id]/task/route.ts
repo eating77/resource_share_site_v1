@@ -5,11 +5,12 @@ import { REQUIRED_SCREENSHOTS, type Task } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, ctx: Ctx) {
   try {
-    const task = await getTask(ctx.params.id);
+    const { id } = await ctx.params;
+    const task = await getTask(id);
     return NextResponse.json({ ok: true, data: task });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "读取任务失败" }, { status: 500 });
@@ -21,8 +22,9 @@ export async function PUT(request: NextRequest, ctx: Ctx) {
     return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
   }
   try {
+    const { id } = await ctx.params;
     const body = (await request.json()) as Omit<Task, "id" | "resource_id">;
-    await saveTask(ctx.params.id, {
+    await saveTask(id, {
       enabled: Boolean(body.enabled),
       title: typeof body.title === "string" ? body.title : "完成任务",
       description: typeof body.description === "string" ? body.description : "",

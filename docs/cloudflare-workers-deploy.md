@@ -5,6 +5,14 @@
 > 本文档基于 2026-10 实测版本：`@opennextjs/cloudflare@1.20.15`、`next@15.5.28`、`wrangler@4.156.0`。
 > 所有版本号均来自 npm registry 实际查询，非推测。
 
+> **执行状态（2026-10-31）**
+> 第 5～11 步的代码改造已在分支 `feat/cloudflare-workers` 完成并本地验证通过：
+> - `next build` ✅ 通过（全部路由为动态渲染 `ƒ`）
+> - `opennextjs-cloudflare build` ✅ 生成 `.open-next/worker.js`
+> - `wrangler deploy --dry-run` ✅ 配置合法，**gzip 后 1232.76 KiB**（免费版上限 3 MiB，余量充足）
+>
+> 剩余工作是需要你在 Cloudflare 控制台完成的动作：配环境变量、接 GitHub、绑域名（第 14～16 步）。
+
 ---
 
 ## 目录
@@ -174,7 +182,96 @@ export default async function SearchPage({ searchParams }: Props) {
   const sp = await searchParams;
 ```
 
-### 5.3 `cookies()` 的两条路线
+### 5.3 API 路由的 `params`（容易漏！）
+
+**这一项极易被忽略**：路由处理器的 `ctx.params` 同样是 Promise，不改会在 `next build` 阶段报
+`Type '{ __tag__: "PUT"; ... }' does not satisfy the constraint 'ParamCheck<RouteContext>'`。
+
+共 **7 个文件**，两种写法：
+
+**（1）用 `type Ctx` 的 5 个文件** —— 改类型 + 每个 handler 内 `await ctx.params`：
+
+```ts
+// 改前
+type Ctx = { params: { id: string } };
+// 改后
+type Ctx = { params: Promise<{ id: string }> };
+
+// 每个用到 id 的 handler（PUT / GET / DELETE / POST）里加一行：
+try {
+  const { id } = await ctx.params;   // ← 新增
+  ...
+  await updateResource(id, { ... }); // ctx.params.id → id
+```
+
+涉及文件：
+
+- `src/app/api/announcements/[id]/route.ts`
+- `src/app/api/categories/[id]/route.ts`
+- `src/app/api/resources/[id]/route.ts`
+- `src/app/api/resources/[id]/task/route.ts`
+- `src/app/api/submissions/[id]/route.ts`
+
+**（2）内联类型的 3 个文件**：
+
+- `src/app/api/resources/[id]/claim/route.ts`
+- `src/app/api/resources/[id]/claim-status/route.ts`
+- `src/app/api/resources/[id]/view/route.ts`
+
+```ts
+// 改前
+export async function POST(_request: Request, ctx: { params: { id: string } }) {
+  try {
+    const resource = await getResource(ctx.params.id);
+
+// 改后
+export async function POST(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await ctx.params;
+    const resource = await getResource(id);
+```
+
+> 注意：`src/app/resource/[id]/success/page.tsx` 是**客户端组件**（`"use client"`），
+> 不能用 `await`，要用 React 的 `use()`：
+>
+> ```tsx
+> import { use, useEffect, useState } from "react";
+> export default function SuccessPage({ params }: { params: Promise<{ id: string }> }) {
+>   const { id } = use(params);
+> ```
+
+### 5.4 `tsconfig.json` 的编译目标
+
+Next 15 默认目标已升到 `ES2017`，本项目 `tsconfig.json` 里显式写着 `"target": "es5"`，会导致：
+
+```
+Type 'Map<string, Bucket>' can only be iterated through when using the '--downlevelIteration' flag
+```
+
+改一行：
+
+```json
+"target": "ES2017"
+```
+
+> Workers 运行在 V8 上，现代目标是安全且更优的选择（体积更小、无需 downlevel 辅助代码）。
+
+### 5.5 一处类型收窄修复
+
+`src/app/api/submissions/route.ts` 里 `Array.from(new Set(rawUrls))` 会被推导成 `unknown[]`，
+需要显式标注：
+
+```ts
+const rawUrls: string[] = Array.isArray(body?.imageUrls)
+  ? (body.imageUrls as unknown[])
+      .filter((u): u is string => typeof u === "string")
+      .map((u) => u.slice(0, 2048))
+  : [];
+
+const imageUrls: string[] = Array.from(new Set(rawUrls));
+```
+
+### 5.6 `cookies()` 的两条路线
 
 `cookies()` 在 Next 15 变成异步。本项目有 **3 处**同步调用：
 
@@ -206,7 +303,7 @@ const token = (cookies() as unknown as UnsafeUnwrappedCookies).get(ADMIN_COOKIE)
 
 > 建议：本次部署走 A，上线稳定后单独开一个分支做 B。两件事不要混在一次改动里。
 
-### 5.4 验证
+### 5.7 验证
 
 ```bash
 npm run build
@@ -620,10 +717,44 @@ curl -I https://zidy.top
 | 上传报 `Bucket not found` | 没执行 `supabase/init.sql` 或没建 `task-screenshots` 桶 | 补建存储桶 |
 | 部署报 `Worker exceeded size limit` | 超过 3 MiB（免费）/ 10 MiB（付费）压缩后体积 | 看日志里 gzip 后的数值；超了就升付费计划或裁剪依赖 |
 | Windows 本地 `npm run build` 失败 | OpenNext 对 Windows 支持不完整 | 改用 Workers Builds（Linux），或用 WSL |
+| Windows 下 opennext 调子进程构建报 `EPERM ... .next\trace` | 嵌套构建进程被安全软件/文件锁拦截 | 拆成两步：先 `next build`，再 `opennextjs-cloudflare build --skipNextBuild`（见下方命令） |
+| `--skipNextBuild` 报 `ENOENT ... .next\standalone\...pages-manifest.json` | 跳过了 Next 构建，缺少 standalone 产物 | 构建时补上 OpenNext 内部使用的环境变量（见下方命令） |
 | 自定义域名报 `zone not found` | `zidy.top` 不在该 Cloudflare 账号 | 先把域名 NS 迁到该账号 |
 | 绑了域名但打开是 Cloudflare 522/1033 | 证书未签发完 / Worker 未部署成功 | 等 3–5 分钟；查 Deployments 是否 Success |
 | 静态资源 404 | 构建产物 `.open-next/assets` 未生成 | 确认 `npm run build` 在 opennext 构建**之前**成功执行 |
 | 后台操作偶发失效 | `rate-limit.ts` 内存计数在 isolate 间不共享 | 属预期行为，不是 bug；要可靠限流需上 Durable Objects |
+
+### Windows 下的应急构建路径（已验证）
+
+`opennextjs-cloudflare build` 内部会用 `execSync` 再调一次 `npm run build`。在某些 Windows 环境
+（安全软件、文件锁、受限沙箱）下，这个嵌套进程会因 `EPERM` 失败。可以拆成两步手动执行：
+
+```bash
+# 1) 清掉旧产物
+rm -rf .next .open-next
+
+# 2) 以 standalone 模式构建（这两个变量正是 OpenNext 内部会注入的）
+NEXT_PRIVATE_STANDALONE=true \
+NEXT_PRIVATE_OUTPUT_TRACE_ROOT="$(pwd)" \
+npm run build
+
+# 3) 只做 OpenNext 转换，不再触发嵌套构建
+npx opennextjs-cloudflare build --skipNextBuild
+
+# 4) 校验产物与体积（不会真的部署）
+npx wrangler deploy --dry-run
+```
+
+成功标志：
+
+```
+Worker saved in `.open-next\worker.js` 🚀
+OpenNext build complete.
+```
+
+`--dry-run` 会打印实际体积，例如本项目实测 `gzip: 1232.76 KiB`，低于免费版 3 MiB 上限。
+
+> 这是本地应急方案。线上仍建议用 Workers Builds（Linux），一次都不会踩到这些坑。
 
 **通用排查入口**
 
@@ -644,7 +775,7 @@ Cloudflare 控制台 → Worker → **Logs** 里也能看到 `observability` 开
 |---|---|---|
 | 请求数 | 100,000 次/天 | 个人资源站通常远低于此 |
 | CPU 时间 | 10ms/请求（免费计划） | ⚠️ **风险点**：SSR + Supabase 往返可能超。若大量 1102 错误，需升付费 |
-| Worker 体积 | 3 MiB（压缩后） | 本项目依赖不多，预计安全 |
+| Worker 体积 | 3 MiB（压缩后） | ✅ **已实测 1232.76 KiB**，约 1.2 MiB，余量充足 |
 | 自定义域名 | 支持 | ✅ |
 
 **付费计划 $5/月起**：CPU 时间放宽到 30 秒、体积 10 MiB。如果上线后频繁出现 `Error 1102 (exceeded CPU)`，就是该升级了。
@@ -676,15 +807,29 @@ Worker 天然带版本管理：
 
 | 文件 | 动作 |
 |---|---|
-| `package.json` | 升级 next/react/react-dom；新增 opennext、wrangler 依赖与 scripts |
+| `package.json` | next→15.5.28、react/react-dom→19；新增 `@opennextjs/cloudflare`、`wrangler`；新增 preview/deploy/cf-typegen 脚本 |
+| `package-lock.json` | 随依赖更新 |
+| `tsconfig.json` | `target`: `es5` → `ES2017` |
 | `wrangler.jsonc` | **新建** |
 | `open-next.config.ts` | **新建** |
 | `public/_headers` | **新建** |
-| `.dev.vars` | **新建**（本地用，已 gitignore） |
-| `next.config.js` | 可选：加 `initOpenNextCloudflareForDev` |
-| `src/lib/supabase.ts` | `cookies()` 异步化 |
-| `src/lib/auth.ts` | 2 处 `cookies()` 异步化 |
-| `src/lib/db.ts` | 加生产环境护栏；路线 B 时 8 处加 `await` |
-| `src/app/resource/[id]/page.tsx` 等 4 个页面 | `params` 改 Promise |
-| `src/app/search/page.tsx` | `searchParams` 改 Promise |
-| `.gitignore` | 已含 `.open-next/`、`.wrangler/`、`.dev.vars*` |
+| `next.config.js` | 末尾加 `initOpenNextCloudflareForDev`（仅 dev，带 try/catch） |
+| `src/lib/supabase.ts` | `createServerSupabase()` 用 `UnsafeUnwrappedCookies`（快路径） |
+| `src/lib/auth.ts` | 2 处 `cookies()` 同上（快路径） |
+| `src/lib/db.ts` | 新增生产环境配置护栏（排除构建阶段） |
+| `src/app/resource/[id]/page.tsx` | `params` 改 Promise + await |
+| `src/app/category/[id]/page.tsx` | 同上 |
+| `src/app/admin/resources/[id]/page.tsx` | 同上 |
+| `src/app/resource/[id]/success/page.tsx` | 客户端组件，改用 `use(params)` |
+| `src/app/search/page.tsx` | `searchParams` 改 Promise + await |
+| `src/app/api/announcements/[id]/route.ts` | `Ctx.params` 改 Promise + 各 handler await |
+| `src/app/api/categories/[id]/route.ts` | 同上 |
+| `src/app/api/resources/[id]/route.ts` | 同上（4 个 handler） |
+| `src/app/api/resources/[id]/task/route.ts` | 同上 |
+| `src/app/api/resources/[id]/claim/route.ts` | 内联类型改 Promise + await |
+| `src/app/api/resources/[id]/claim-status/route.ts` | 同上 |
+| `src/app/api/resources/[id]/view/route.ts` | 同上 |
+| `src/app/api/submissions/route.ts` | `imageUrls` 显式标注 `string[]` |
+| `.gitignore` | 已含 `.open-next/`、`.wrangler/`、`.dev.vars*`、`/.workbuddy/` |
+
+> 本地验证结果：`next build` ✅ / `opennextjs-cloudflare build` ✅ / `wrangler deploy --dry-run` ✅

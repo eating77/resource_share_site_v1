@@ -3,11 +3,12 @@ import { ResourceGrid, SiteFooter, SiteHeader } from "@/components/site";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: { q?: string | string[] } };
+type Props = { searchParams: Promise<{ q?: string | string[] }> };
 
 export default async function SearchPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const settings = await getSiteSettingsCached();
-  const raw = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q;
+  const raw = Array.isArray(sp.q) ? sp.q[0] : sp.q;
   const q = (raw || "").trim().slice(0, 100);
   const results = q ? await listResources({ search: q, publishedOnly: true, limit: 100 }) : [];
 
