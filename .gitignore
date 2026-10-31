@@ -1,0 +1,45 @@
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env.local
+.env*.local
+
+# 演示模式本地数据（不提交）
+/data/demo-store.json
+/data/demo-store.json.tmp
+
+# 本地调试残留（含测试账号/登录Cookie，严禁提交）
+/data/login.json
+/data/test-cookies.txt
+
+# 本地开发服务日志
+dev-server.log
+dev-server.err.log
+
+# 演示模式上传的图片（不提交）
+/public/uploads/
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
