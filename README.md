@@ -67,6 +67,12 @@ npm run start
 
 无需购买域名即可获得 vercel.app 免费二级域名。
 
+## 部署到互联网（Cloudflare Workers）
+
+想用 Cloudflare 托管并绑定自有域名（免备案），请按 **[docs/cloudflare-workers-deploy.md](docs/cloudflare-workers-deploy.md)** 操作。
+
+要点提示：本项目是 Next.js 全栈应用（含 API 路由与鉴权），**不能用 Cloudflare Pages 静态导出**，须使用 `@opennextjs/cloudflare` 部署到 Workers；且该适配器要求 `next >= 15.5.28`，需先从 Next 14 升级。
+
 ## 环境变量说明
 
 | 变量 | 用途 | 是否可公开 |
