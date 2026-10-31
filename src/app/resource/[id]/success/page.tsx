@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 type ClaimData = { title: string; driveUrl: string };
 
+export const runtime = "edge";
+
 export default function SuccessPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();

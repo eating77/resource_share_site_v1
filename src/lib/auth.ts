@@ -1,7 +1,7 @@
 import { cookies, type UnsafeUnwrappedCookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabase, isSupabaseConfigured } from "./supabase";
-import { demoCheckToken, demoSetToken, demoVerifyPassword } from "./demo-store";
+import { demoCheckToken, demoSetToken, demoVerifyPassword } from "./db";
 
 export const ADMIN_COOKIE = "rs_admin";
 export const VID_COOKIE = "rs_vid";

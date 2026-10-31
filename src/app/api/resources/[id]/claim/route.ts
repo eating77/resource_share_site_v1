@@ -3,6 +3,7 @@ import { getVisitorKey, makeVisitorKey, visitorCookie } from "@/lib/auth";
 import { getResource, getTask, isApproved } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /**
  * 领取信息接口（核心安全点）：

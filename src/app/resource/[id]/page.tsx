@@ -5,6 +5,7 @@ import { SiteFooter, SiteHeader, ViewCounter } from "@/components/site";
 import { TaskEntry } from "@/components/task-entry";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

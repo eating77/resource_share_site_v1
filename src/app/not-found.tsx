@@ -4,6 +4,7 @@ import { DEFAULT_SETTINGS } from "@/lib/types";
 import { SiteFooter, SiteHeader } from "@/components/site";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function NotFoundPage() {
   let settings = DEFAULT_SETTINGS;

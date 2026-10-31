@@ -4,6 +4,7 @@ import { ResourceForm } from "@/components/resource-form";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function NewResourcePage() {
   const categories = await listCategories();

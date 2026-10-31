@@ -2,6 +2,7 @@ import { getSiteSettings, listAnnouncements } from "@/lib/db";
 import { AnnouncementsPage } from "@/components/admin-announcements";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function AdminAnnouncementsRoute() {
   const [announcements, settings] = await Promise.all([listAnnouncements(), getSiteSettings()]);

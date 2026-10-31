@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/auth";
 import { demoSetPassword, isSupabaseConfigured } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /** 演示模式专用：修改演示管理员密码（Supabase 模式请在 Supabase 控制台管理） */
 export async function POST(request: NextRequest) {

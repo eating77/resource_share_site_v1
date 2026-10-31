@@ -4,6 +4,7 @@ import { getVisitorKey } from "@/lib/auth";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /** 截图上传接口：仅接受图片，服务端校验格式魔数与大小，返回可访问 URL */
 export async function POST(request: NextRequest) {
@@ -28,11 +29,11 @@ export async function POST(request: NextRequest) {
     if (file.type && !file.type.startsWith("image/")) {
       return NextResponse.json({ ok: false, error: "仅支持上传图片文件" }, { status: 400 });
     }
-    const buffer = Buffer.from(await file.arrayBuffer());
-    if (buffer.byteLength > MAX_UPLOAD_BYTES) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (bytes.byteLength > MAX_UPLOAD_BYTES) {
       return NextResponse.json({ ok: false, error: "图片大小超过 5MB 限制" }, { status: 400 });
     }
-    const url = await saveScreenshotImage(buffer, file.name);
+    const url = await saveScreenshotImage(bytes, file.name);
     return NextResponse.json({ ok: true, data: { url } });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "上传失败";

@@ -3,6 +3,7 @@ import { ResourceGrid, SiteFooter, SiteHeader } from "@/components/site";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function CategoryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

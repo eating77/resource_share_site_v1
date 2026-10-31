@@ -3,6 +3,7 @@ import { getAdminEmail } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function GET() {
   const email = await getAdminEmail();

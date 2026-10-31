@@ -3,6 +3,7 @@ import { listCategories, listResources, listSubmissions } from "@/lib/db";
 import { formatTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function AdminDashboard() {
   const [all, categories, submissions] = await Promise.all([

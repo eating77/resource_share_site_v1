@@ -5,6 +5,7 @@ import { getSiteSettings, isSupabaseConfigured } from "@/lib/db";
 import { AdminLogoutButton } from "@/components/admin-logout";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   // 登录页位于 /admin 路由组内，不能被布局守卫重定向回自身（避免 307 死循环）

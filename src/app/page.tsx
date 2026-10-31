@@ -2,6 +2,7 @@ import { getSiteSettingsCached, listAnnouncements, listCategories, listResources
 import { HomeClient, SiteFooter, SiteHeader } from "@/components/site";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function Home() {
   const settings = await getSiteSettingsCached();

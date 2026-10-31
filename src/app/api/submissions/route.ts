@@ -5,6 +5,7 @@ import { isLocalUploadUrl } from "@/lib/upload";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /** 管理端：查看全部截图提交记录（含图片、资源名、数量、状态） */
 export async function GET() {

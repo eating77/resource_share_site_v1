@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { incrementViews } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function POST(_request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {

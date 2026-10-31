@@ -3,6 +3,7 @@ import { getVisitorKey, makeVisitorKey, visitorCookie } from "@/lib/auth";
 import { isApproved } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /** 查询当前访客对该资源是否已满足领取条件（用于刷新页面后恢复任务状态） */
 export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {

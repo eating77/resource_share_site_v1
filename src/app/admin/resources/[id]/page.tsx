@@ -3,6 +3,7 @@ import { ResourceForm } from "@/components/resource-form";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function EditResourcePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

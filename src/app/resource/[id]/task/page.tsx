@@ -43,6 +43,8 @@ function makeComment(domain: string, previous?: string): string {
   return text;
 }
 
+export const runtime = "edge";
+
 export default function TaskPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();

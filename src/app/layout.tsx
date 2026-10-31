@@ -4,6 +4,7 @@ import { getSiteSettingsCached } from "@/lib/db";
 import { isSupabaseConfigured } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function generateMetadata(): Promise<Metadata> {
   try {

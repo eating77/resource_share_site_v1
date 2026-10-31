@@ -2,6 +2,7 @@ import { listCategories, listResources } from "@/lib/db";
 import { CategoryManager } from "@/components/admin-categories";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function AdminCategoriesPage() {
   const [categories, resources] = await Promise.all([listCategories(), listResources({ limit: 1000 })]);

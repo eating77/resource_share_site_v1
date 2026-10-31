@@ -41,13 +41,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-
-// 仅本地 next dev 需要：让开发服务器能模拟 Cloudflare bindings。
-// 本项目目前未使用 KV/R2/D1 等绑定，但保留此接入，未来加绑定无需再改配置。
-if (process.env.NODE_ENV === "development") {
-  try {
-    require("@opennextjs/cloudflare").initOpenNextCloudflareForDev();
-  } catch {
-    // 未安装 OpenNext（如纯 Vercel 部署场景）时静默跳过，不影响本地开发
-  }
-}

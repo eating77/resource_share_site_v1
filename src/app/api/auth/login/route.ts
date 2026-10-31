@@ -3,6 +3,7 @@ import { adminLogin, ADMIN_COOKIE } from "@/lib/auth";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function POST(request: NextRequest) {
   const limited = rateLimit(`login:${clientIp(request)}`, 10, 5 * 60 * 1000);

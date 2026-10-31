@@ -2,6 +2,7 @@ import { getSiteSettings } from "@/lib/db";
 import { AppearanceForm } from "@/components/admin-appearance";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default async function AdminAppearancePage() {
   const settings = await getSiteSettings();

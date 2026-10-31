@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/auth";
 import type { Resource } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
   try {

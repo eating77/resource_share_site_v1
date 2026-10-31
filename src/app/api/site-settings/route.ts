@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/auth";
 import type { SiteSettings } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 const COLOR_KEYS = ["primary_color", "accent_color", "button_color"] as const;
 

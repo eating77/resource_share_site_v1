@@ -4,6 +4,7 @@ import { requireAdminApi } from "@/lib/auth";
 import { REQUIRED_SCREENSHOTS, type Task } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 type Ctx = { params: Promise<{ id: string }> };
 

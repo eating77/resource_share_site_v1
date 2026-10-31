@@ -6,6 +6,8 @@ import { useState } from "react";
 import { apiFetch, StatusInline } from "@/components/admin-ui";
 import { isSupabaseConfigured } from "@/lib/env";
 
+export const runtime = "edge";
+
 export default function AdminLogin() {
   const router = useRouter();
   const sp = useSearchParams();

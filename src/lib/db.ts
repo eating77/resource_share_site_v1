@@ -1,16 +1,25 @@
 import { cache } from "react";
 import { createServiceSupabase, createServerSupabase, isSupabaseConfigured } from "./supabase";
-import {
+import type { DemoStore } from "./node-only/demo-store.node";
+import { DEFAULT_SETTINGS, REQUIRED_SCREENSHOTS, SiteSettings, Category, Resource, Task, TaskStep, Submission, Announcement } from "./types";
+
+/**
+ * 演示模式实现按运行时二选一：
+ * Next 构建期会把 process.env.NEXT_RUNTIME 替换为字面量（官方文档模式），
+ * 配合死代码消除，edge 包里只保留 demo-store.edge 桩，fs/node:crypto 不会进入依赖图。
+ */
+const {
   demoLoad,
   demoSave,
   demoReset,
-  DemoStore,
   demoVerifyPassword,
   demoSetToken,
   demoCheckToken,
   demoSetPassword,
-} from "./demo-store";
-import { DEFAULT_SETTINGS, REQUIRED_SCREENSHOTS, SiteSettings, Category, Resource, Task, TaskStep, Submission, Announcement } from "./types";
+}: typeof import("./node-only/demo-store.node") =
+  process.env.NEXT_RUNTIME === "edge"
+    ? require("./node-only/demo-store.edge")
+    : require("./node-only/demo-store.node");
 
 /**
  * 数据访问层（唯一入口）。

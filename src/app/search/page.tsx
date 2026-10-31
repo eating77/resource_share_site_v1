@@ -2,6 +2,7 @@ import { getSiteSettingsCached, listResources } from "@/lib/db";
 import { ResourceGrid, SiteFooter, SiteHeader } from "@/components/site";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 type Props = { searchParams: Promise<{ q?: string | string[] }> };
 

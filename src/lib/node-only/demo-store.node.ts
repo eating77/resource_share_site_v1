@@ -1,12 +1,18 @@
 import fs from "fs";
 import path from "path";
 import crypto from "crypto";
-import { DEFAULT_SETTINGS, SiteSettings } from "./types";
+import { DEFAULT_SETTINGS, SiteSettings } from "../types";
 
 /**
  * 本地演示模式数据存储（服务端 JSON 文件）。
- * 仅在没有配置 Supabase 环境变量时启用，用于在 Windows 本地体验完整功能。
+ * 仅在没有配置 Supabase 环境变量时启用，用于在本地（Node.js 运行时）体验完整功能。
  * 生产环境必须切换到 Supabase，本地数据不具备多用户与云端能力。
+ *
+ * ⚠️ 本文件只能在 Node.js 运行时被打包（依赖 fs/path/crypto）。
+ * 通过 next.config.js 的 webpack alias 控制：
+ *   - nodejs 运行时 → 本文件（demo-store.node.ts）
+ *   - edge 运行时   → demo-store.edge.ts（桩实现，调用即报配置错误）
+ * 业务代码一律从 "@/node-only/demo-store" 导入，不要直接引用本文件。
  */
 
 export type DemoCategory = { id: string; name: string; icon: string; sort_order: number };

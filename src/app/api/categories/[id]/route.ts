@@ -3,6 +3,7 @@ import { deleteCategory, updateCategory } from "@/lib/db";
 import { requireAdminApi } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 type Ctx = { params: Promise<{ id: string }> };
 

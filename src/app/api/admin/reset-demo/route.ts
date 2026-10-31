@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/auth";
 import { resetDemoData, isSupabaseConfigured } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 /** 演示模式专用：重置本地演示数据（生产/Supabase 模式不可用） */
 export async function POST(_request: NextRequest) {
