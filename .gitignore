@@ -40,6 +40,15 @@ dev-server.err.log
 # vercel
 .vercel
 
+# Cloudflare / OpenNext 构建产物
+/.open-next/
+/.wrangler/
+.dev.vars
+.dev.vars.*
+
+# 本地工具目录（不入代码库）
+/.workbuddy/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
