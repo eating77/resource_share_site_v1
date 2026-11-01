@@ -53,10 +53,21 @@ jobs:
             throw new Error(`Functions directory not found: ${functionsDir}`);
           }
 
-          const funcDirs = fs
-            .readdirSync(functionsDir, { withFileTypes: true })
-            .filter((e) => e.isDirectory() && e.name.endsWith(".func"))
-            .map((e) => e.name);
+          // next-on-pages nests functions: page functions sit at the top level
+          // (resource.func) while API functions live under api/ (api/resources.func).
+          // Collect every *.func directory recursively so nested ones aren't missed.
+          const funcDirs = [];
+          (function collect(dir, base) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const rel = base ? `${base}/${entry.name}` : entry.name;
+              if (!entry.isDirectory()) continue;
+              if (entry.name.endsWith(".func")) {
+                funcDirs.push(rel);
+              } else {
+                collect(path.join(dir, entry.name), rel);
+              }
+            }
+          })(functionsDir, "");
 
           const required = [
             "api/resources.func",
