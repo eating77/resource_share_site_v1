@@ -5,9 +5,10 @@ import { notFound } from "next/navigation";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-export default async function EditResourcePage({ params }: { params: Promise<{ adminResourceId: string }> }) {
-  const { adminResourceId } = await params;
-  const [resource, task, categories] = await Promise.all([getResource(adminResourceId), getTask(adminResourceId), listCategories()]);
+export default async function EditResourcePage({ searchParams }: { searchParams: Promise<{ id?: string }> }) {
+  const { id } = await searchParams;
+  if (!id) notFound();
+  const [resource, task, categories] = await Promise.all([getResource(id), getTask(id), listCategories()]);
   if (!resource) notFound();
   return <ResourceForm resource={resource} task={task} categories={categories} isNew={false} />;
 }

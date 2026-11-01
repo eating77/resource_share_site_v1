@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSubmission, getResource, listSubmissions } from "@/lib/db";
+import { createSubmission, deleteSubmission, getResource, getSubmission, listSubmissions } from "@/lib/db";
 import { requireAdminApi, getVisitorKey, makeVisitorKey, visitorCookie } from "@/lib/auth";
 import { isLocalUploadUrl } from "@/lib/upload";
 import { rateLimit } from "@/lib/rate-limit";
@@ -8,7 +8,20 @@ export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
 /** 管理端：查看全部截图提交记录（含图片、资源名、数量、状态） */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get("id");
+  if (id) {
+    if (!(await requireAdminApi())) {
+      return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
+    }
+    try {
+      const submission = await getSubmission(id);
+      if (!submission) return NextResponse.json({ ok: false, error: "记录不存在" }, { status: 404 });
+      return NextResponse.json({ ok: true, data: submission });
+    } catch (e) {
+      return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "读取记录失败" }, { status: 500 });
+    }
+  }
   if (!(await requireAdminApi())) {
     return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
   }
@@ -64,5 +77,19 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "提交失败";
     return NextResponse.json({ ok: false, error: msg }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false, error: "缺少记录标识" }, { status: 400 });
+  if (!(await requireAdminApi())) {
+    return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
+  }
+  try {
+    await deleteSubmission(id);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "删除记录失败" }, { status: 500 });
   }
 }

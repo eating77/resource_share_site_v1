@@ -42,7 +42,7 @@ export function AnnouncementsPage({ initial, settings }: { initial: Announcement
     }
     try {
       if (editing) {
-        await apiFetch(`/api/announcements/${editing.id}`, { method: "PUT", body: JSON.stringify(form) });
+        await apiFetch(`/api/announcements?id=${editing.id}`, { method: "PUT", body: JSON.stringify(form) });
       } else {
         const d = await apiFetch("/api/announcements", { method: "POST", body: JSON.stringify(form) });
         setItems((l) => [...l, d.data]);
@@ -62,7 +62,7 @@ export function AnnouncementsPage({ initial, settings }: { initial: Announcement
 
   const toggle = async (a: Announcement) => {
     try {
-      await apiFetch(`/api/announcements/${a.id}`, { method: "PUT", body: JSON.stringify({ ...a, enabled: !a.enabled }) });
+      await apiFetch(`/api/announcements?id=${a.id}`, { method: "PUT", body: JSON.stringify({ ...a, enabled: !a.enabled }) });
       setItems((l) => l.map((x) => (x.id === a.id ? { ...x, enabled: !x.enabled } : x)));
     } catch (e) {
       setNotice({ type: "error", text: e instanceof Error ? e.message : "操作失败" });
@@ -72,7 +72,7 @@ export function AnnouncementsPage({ initial, settings }: { initial: Announcement
   const remove = async () => {
     if (!confirm) return;
     try {
-      await apiFetch(`/api/announcements/${confirm.id}`, { method: "DELETE" });
+      await apiFetch(`/api/announcements?id=${confirm.id}`, { method: "DELETE" });
       setItems((l) => l.filter((x) => x.id !== confirm.id));
       setConfirm(null);
       setNotice({ type: "success", text: "公告已删除" });

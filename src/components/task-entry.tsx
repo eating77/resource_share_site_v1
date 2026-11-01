@@ -10,7 +10,7 @@ export function TaskEntry({ resourceId, settings, taskEnabled }: { resourceId: s
   const [state, setState] = useState<"loading" | "todo" | "done">("loading");
   useEffect(() => {
     let alive = true;
-    fetch(`/api/resources/${resourceId}/claim-status`, { cache: "no-store" })
+    fetch(`/api/resources/claim-status?id=${resourceId}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((d) => {
         if (alive) setState(d.ok && d.approved ? "done" : "todo");
@@ -40,7 +40,7 @@ export function TaskEntry({ resourceId, settings, taskEnabled }: { resourceId: s
           <b>你已满足领取条件</b>
           <p>点击下方按钮立即获取资源。</p>
         </div>
-        <Link className="submit-button" href={`/resource/${resourceId}/success`}>
+        <Link className="submit-button" href={`/resource/success?id=${resourceId}`}>
           立即获取 →
         </Link>
       </div>
@@ -53,7 +53,7 @@ export function TaskEntry({ resourceId, settings, taskEnabled }: { resourceId: s
         <b>完成宣传任务，免费领取资源</b>
         <p>30秒完成，超级简单❤</p>
       </div>
-      <button className="submit-button" onClick={() => router.push(`/resource/${resourceId}/task`)}>
+      <button className="submit-button" onClick={() => router.push(`/resource/task?id=${resourceId}`)}>
         {settings.copy_task_start || "开始任务"} →
       </button>
     </div>

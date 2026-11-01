@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { REQUIRED_SCREENSHOTS, type Resource, type SiteSettings, type Task } from "@/lib/types";
 import { CopyButton } from "@/components/site";
@@ -46,7 +46,8 @@ function makeComment(domain: string, previous?: string): string {
 export const runtime = "edge";
 
 export default function TaskPage() {
-  const params = useParams<{ resourceId: string }>();
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const router = useRouter();
   const [resource, setResource] = useState<Resource | null>(null);
   const [task, setTask] = useState<Task | null>(null);
@@ -68,10 +69,10 @@ export default function TaskPage() {
     (async () => {
       try {
         const [rRes, tRes, sRes, cRes] = await Promise.all([
-          fetch(`/api/resources/${params.resourceId}`, { cache: "no-store" }),
-          fetch(`/api/resources/${params.resourceId}/task`, { cache: "no-store" }),
+          fetch(`/api/resources?id=${id}`, { cache: "no-store" }),
+          fetch(`/api/resources/task?id=${id}`, { cache: "no-store" }),
           fetch(`/api/site-settings`, { cache: "no-store" }),
-          fetch(`/api/resources/${params.resourceId}/claim-status`, { cache: "no-store" }),
+          fetch(`/api/resources/claim-status?id=${id}`, { cache: "no-store" }),
         ]);
         const r = (await rRes.json()) as { ok: boolean; data?: Resource; error?: string };
         const t = (await tRes.json()) as { ok: boolean; data?: Task | null };
@@ -88,7 +89,7 @@ export default function TaskPage() {
         setKeyword(r.data?.title || "");
         setComment(makeComment(s.data?.claim_domain || "xxx.yyy"));
         if (c.ok && c.approved) {
-          router.replace(`/resource/${params.resourceId}/success`);
+          router.replace(`/resource/success?id=${id}`);
           return;
         }
       } catch {
@@ -103,7 +104,7 @@ export default function TaskPage() {
     return () => {
       alive = false;
     };
-  }, [params.resourceId, router]);
+  }, [id, router]);
 
   const required = task && !task.enabled ? 0 : REQUIRED_SCREENSHOTS;
 
@@ -177,7 +178,7 @@ export default function TaskPage() {
       // 提交成功：直接取回领取链接，弹出「提交成功」弹窗
       let driveUrl = "";
       try {
-        const claimRes = await fetch(`/api/resources/${resource.id}/claim`, { method: "POST", cache: "no-store" });
+        const claimRes = await fetch(`/api/resources/claim?id=${resource.id}`, { method: "POST", cache: "no-store" });
         const claim = await claimRes.json();
         if (claimRes.ok && claim.ok && claim.data) driveUrl = claim.data.driveUrl || "";
       } catch {
@@ -221,7 +222,7 @@ export default function TaskPage() {
     return (
       <main className="task-page">
         <div className="task-wrap">
-          <Link href={`/resource/${resource.id}`} className="back-link">
+          <Link href={`/resource?id=${resource.id}`} className="back-link">
             ← 返回资源详情
           </Link>
           <div className="empty">该资源暂未启用领取任务。</div>
@@ -233,7 +234,7 @@ export default function TaskPage() {
   return (
     <main className="task-page">
       <div className="task-wrap">
-        <Link href={`/resource/${resource.id}`} className="back-link">
+        <Link href={`/resource?id=${resource.id}`} className="back-link">
           ← 返回资源详情
         </Link>
         <section className="resource-summary">

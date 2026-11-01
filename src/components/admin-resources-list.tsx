@@ -20,7 +20,7 @@ export function AdminResourcesList({ initial, categories }: { initial: Resource[
 
   const toggle = async (r: Resource, key: "is_published" | "is_home" | "is_hot") => {
     try {
-      await apiFetch(`/api/resources/${r.id}`, { method: "PUT", body: JSON.stringify({ [key]: !r[key] }) });
+      await apiFetch(`/api/resources?id=${r.id}`, { method: "PUT", body: JSON.stringify({ [key]: !r[key] }) });
       setItems((list) => list.map((x) => (x.id === r.id ? { ...x, [key]: !x[key] } : x)));
       setNotice(`已更新「${r.title}」`);
     } catch (e) {
@@ -30,7 +30,7 @@ export function AdminResourcesList({ initial, categories }: { initial: Resource[
 
   const move = async (r: Resource, dir: "up" | "down") => {
     try {
-      await apiFetch(`/api/resources/${r.id}?move=${dir}`, { method: "POST" });
+      await apiFetch(`/api/resources?id=${r.id}&move=${dir}`, { method: "POST" });
       // 排序改变，直接刷新页面获取最新顺序
       window.location.reload();
     } catch (e) {
@@ -41,7 +41,7 @@ export function AdminResourcesList({ initial, categories }: { initial: Resource[
   const remove = async () => {
     if (!confirm) return;
     try {
-      await apiFetch(`/api/resources/${confirm.id}`, { method: "DELETE" });
+      await apiFetch(`/api/resources?id=${confirm.id}`, { method: "DELETE" });
       setItems((list) => list.filter((x) => x.id !== confirm.id));
       setConfirm(null);
       setNotice(`已删除「${confirm.title}」`);
@@ -139,7 +139,7 @@ export function AdminResourcesList({ initial, categories }: { initial: Resource[
                     </td>
                     <td>
                       <span className="row-actions">
-                        <Link className="btn small" href={`/admin/resources/${r.id}`}>
+                        <Link className="btn small" href={`/admin/resources/edit?id=${r.id}`}>
                           编辑
                         </Link>
                         <button className="btn small danger" onClick={() => setConfirm(r)}>

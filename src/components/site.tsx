@@ -121,7 +121,7 @@ export function SiteFooter({ settings }: { settings: SiteSettings }) {
 export function ResourceCard({ resource, settings, compact }: { resource: Resource; settings: SiteSettings; compact?: boolean }) {
   return (
     <article className="resource-card">
-      <Link href={`/resource/${resource.id}`} className="cover">
+      <Link href={`/resource?id=${resource.id}`} className="cover">
         {resource.cover_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={resource.cover_url} alt={resource.title} className="cover-img" />
@@ -139,7 +139,7 @@ export function ResourceCard({ resource, settings, compact }: { resource: Resour
           {resource.size && <span>♧ {resource.size}</span>}
           <span className="rating">★ {resource.rating}</span>
         </div>
-        <Link className="get-button" href={`/resource/${resource.id}`}>
+        <Link className="get-button" href={`/resource?id=${resource.id}`}>
           {settings.copy_get_button || "获取资源"} <span>→</span>
         </Link>
       </div>
@@ -266,7 +266,7 @@ export function ViewCounter({ resourceId }: { resourceId: string }) {
   useEffect(() => {
     if (done.current) return;
     done.current = true;
-    fetch(`/api/resources/${resourceId}/view`, { method: "POST" }).catch(() => {});
+    fetch(`/api/resources/view?id=${resourceId}`, { method: "POST" }).catch(() => {});
   }, [resourceId]);
   return null;
 }

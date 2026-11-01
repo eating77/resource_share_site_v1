@@ -85,9 +85,9 @@ export function ResourceForm({
         const d = await apiFetch("/api/resources", { method: "POST", body: JSON.stringify(form) });
         id = d.data.id;
       } else {
-        await apiFetch(`/api/resources/${id}`, { method: "PUT", body: JSON.stringify(form) });
+        await apiFetch(`/api/resources?id=${id}`, { method: "PUT", body: JSON.stringify(form) });
       }
-      await apiFetch(`/api/resources/${id}/task`, {
+      await apiFetch(`/api/resources/task?id=${id}`, {
         method: "PUT",
         body: JSON.stringify({
           enabled: taskForm.enabled,
@@ -96,7 +96,7 @@ export function ResourceForm({
       });
       setStatus({ type: "success", text: "保存成功！前台已更新。" });
       setDirty(false);
-      if (isNew) router.replace(`/admin/resources/${id}`);
+      if (isNew) router.replace(`/admin/resources/edit?id=${id}`);
     } catch (e) {
       setStatus({ type: "error", text: e instanceof Error ? e.message : "保存失败" });
     } finally {
@@ -235,7 +235,7 @@ export function ResourceForm({
 
 function LinkBack({ id }: { id: string }) {
   return (
-    <a href={`/resource/${id}`} target="_blank" rel="noreferrer" className="btn small ghost">
+    <a href={`/resource?id=${id}`} target="_blank" rel="noreferrer" className="btn small ghost">
       查看前台页面 ↗
     </a>
   );
@@ -243,7 +243,7 @@ function LinkBack({ id }: { id: string }) {
 
 function LinkPreview({ id }: { id: string }) {
   return (
-    <a href={`/resource/${id}`} target="_blank" rel="noreferrer" className="btn ghost">
+    <a href={`/resource?id=${id}`} target="_blank" rel="noreferrer" className="btn ghost">
       预览前台 ↗
     </a>
   );

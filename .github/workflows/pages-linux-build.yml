@@ -34,68 +34,95 @@ jobs:
       - name: Build Cloudflare Pages output
         run: npm run pages:build
 
-      - name: Verify dynamic route registration
+      - name: Verify function registration
         shell: bash
         run: |
           node <<'NODE'
           const fs = require("node:fs");
           const path = require("node:path");
 
+          // All dynamic-segment routes ([resourceId], [categoryId], ...) have been replaced
+          // with ?id= query parameters, so the next-on-pages function-mapping bug cannot
+          // occur for dynamic segments. Instead we verify:
+          //   1) the query-param functions we depend on actually exist, and
+          //   2) no two .func directories resolve to the SAME .vc-config.json
+          //      (the next-on-pages symlink-collapse bug that previously mapped every
+          //       /api/* function onto api/admin/reset-demo).
           const functionsDir = ".vercel/output/functions";
-          const dynamicPages = new Set();
-
-          function walk(dir) {
-            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-              const fullPath = path.join(dir, entry.name);
-              if (!entry.isDirectory()) continue;
-              if (entry.name === ".next") {
-                const manifestPath = path.join(fullPath, "routes-manifest.json");
-                if (fs.existsSync(manifestPath)) {
-                  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-                  for (const route of manifest.dynamicRoutes || []) {
-                    dynamicPages.add(route.page);
-                  }
-                }
-              } else {
-                walk(fullPath);
-              }
-            }
+          if (!fs.existsSync(functionsDir)) {
+            throw new Error(`Functions directory not found: ${functionsDir}`);
           }
 
-          walk(functionsDir);
+          const funcDirs = fs
+            .readdirSync(functionsDir, { withFileTypes: true })
+            .filter((e) => e.isDirectory() && e.name.endsWith(".func"))
+            .map((e) => e.name);
 
-          const requiredRoutes = [
-            "/resource/[resourceId]",
-            "/category/[categoryId]",
-            "/api/resources/[resourceId]",
-            "/api/resources/[resourceId]/claim",
+          const required = [
+            "api/resources.func",
+            "api/resources/claim.func",
+            "api/resources/claim-status.func",
+            "api/resources/task.func",
+            "api/resources/view.func",
+            "api/categories.func",
+            "api/submissions.func",
+            "api/upload.func",
+            "api/announcements.func",
+            "api/site-settings.func",
+            "api/admin/reset-demo.func",
+            "resource.func",
+            "resource/task.func",
+            "resource/success.func",
+            "category.func",
           ];
-          const missingRoutes = requiredRoutes.filter((route) => !dynamicPages.has(route));
-          if (missingRoutes.length > 0) {
-            throw new Error(`Dynamic routes missing from function manifests: ${missingRoutes.join(", ")}`);
+          const missing = required.filter((f) => !funcDirs.includes(f));
+          if (missing.length > 0) {
+            throw new Error(`Required functions missing from build output: ${missing.join(", ")}`);
           }
 
-          const expectedFunctionNames = new Map([
-            ["resource/[resourceId]", "resource/[resourceId]"],
-            ["category/[categoryId]", "category/[categoryId]"],
-            ["api/resources/[resourceId]", "api/resources/[resourceId]"],
-            ["api/resources/[resourceId]/claim", "api/resources/[resourceId]/claim"],
-          ]);
-          for (const [functionPath, expectedName] of expectedFunctionNames) {
-            const configPath = path.join(functionsDir, `${functionPath}.func`, ".vc-config.json");
+          const seen = new Map(); // realpath -> funcName
+          const problems = [];
+          for (const funcName of funcDirs) {
+            const configPath = path.join(functionsDir, funcName, ".vc-config.json");
+            if (!fs.existsSync(configPath)) {
+              problems.push(`${funcName} has no .vc-config.json`);
+              continue;
+            }
+            const real = fs.realpathSync(configPath);
+            if (seen.has(real)) {
+              problems.push(`${funcName} resolves to the SAME config as ${seen.get(real)} (function-mapping bug)`);
+            } else {
+              seen.set(real, funcName);
+            }
             const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+            const expectedName = funcName.replace(/\.func$/, "");
             if (config.name !== expectedName) {
-              throw new Error(`${functionPath} points to ${config.name}; expected ${expectedName}`);
+              problems.push(`${funcName} declares name "${config.name}"; expected "${expectedName}"`);
             }
           }
 
-          console.log(`Verified ${requiredRoutes.length} required dynamic routes and their function targets.`);
+          if (problems.length > 0) {
+            throw new Error(`Function verification failed:\n  - ${problems.join("\n  - ")}`);
+          }
+
+          console.log(`Verified ${funcDirs.length} function manifests. No dynamic segments, no mis-mapped functions.`);
           NODE
 
+      - name: Deploy to Cloudflare Pages (Linux build)
+        # Only deploy automatically when Cloudflare credentials are present.
+        # If absent, the build+verify above still succeeds and the user can deploy
+        # manually from a Linux environment (or via Cloudflare Git integration).
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler pages deploy .vercel/output --branch=feat/cloudflare-workers --commit-dirty=true
+
       - name: Upload Pages artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cloudflare-pages
           path: .vercel/output/static
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7

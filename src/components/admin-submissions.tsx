@@ -20,7 +20,7 @@ export function SubmissionsList({ initial }: { initial: Submission[] }) {
   const remove = async () => {
     if (!confirm) return;
     try {
-      await apiFetch(`/api/submissions/${confirm.id}`, { method: "DELETE" });
+      await apiFetch(`/api/submissions?id=${confirm.id}`, { method: "DELETE" });
       setItems((l) => l.filter((x) => x.id !== confirm.id));
       setConfirm(null);
       setNotice("记录已删除");

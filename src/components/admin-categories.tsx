@@ -35,7 +35,7 @@ export function CategoryManager({ initial, resourceCounts }: { initial: Category
       return;
     }
     try {
-      await apiFetch(`/api/categories/${editing.id}`, { method: "PUT", body: JSON.stringify({ name, icon }) });
+      await apiFetch(`/api/categories?id=${editing.id}`, { method: "PUT", body: JSON.stringify({ name, icon }) });
       setItems((l) => l.map((c) => (c.id === editing.id ? { ...c, name: name.trim(), icon } : c)));
       setEditing(null);
       setName("");
@@ -49,7 +49,7 @@ export function CategoryManager({ initial, resourceCounts }: { initial: Category
   const remove = async () => {
     if (!confirm) return;
     try {
-      await apiFetch(`/api/categories/${confirm.id}`, { method: "DELETE" });
+      await apiFetch(`/api/categories?id=${confirm.id}`, { method: "DELETE" });
       setItems((l) => l.filter((c) => c.id !== confirm.id));
       setConfirm(null);
       setNotice({ type: "success", text: "分类已删除" });
@@ -68,8 +68,8 @@ export function CategoryManager({ initial, resourceCounts }: { initial: Category
     const a = sorted[idx];
     const b = sorted[j];
     try {
-      await apiFetch(`/api/categories/${a.id}`, { method: "PUT", body: JSON.stringify({ name: a.name, icon: a.icon, sort_order: b.sort_order }) });
-      await apiFetch(`/api/categories/${b.id}`, { method: "PUT", body: JSON.stringify({ name: b.name, icon: b.icon, sort_order: a.sort_order }) });
+      await apiFetch(`/api/categories?id=${a.id}`, { method: "PUT", body: JSON.stringify({ name: a.name, icon: a.icon, sort_order: b.sort_order }) });
+      await apiFetch(`/api/categories?id=${b.id}`, { method: "PUT", body: JSON.stringify({ name: b.name, icon: b.icon, sort_order: a.sort_order }) });
       setItems((l) =>
         l.map((c) => {
           if (c.id === a.id) return { ...c, sort_order: b.sort_order };

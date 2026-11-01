@@ -24,6 +24,10 @@ const pkgRoot = path.resolve(
 const cliEntry = path.join(pkgRoot, "dist/index.js");
 const binEntry = path.join(pkgRoot, "bin/index.js");
 
+// 注意：曾有一段对 @vercel/next 打补丁（patch-vercel-manifest.mjs，关闭动态路由清单裁剪）
+// 的实验性修复，但实测无效且会污染构建产物，现已废弃。所有动态段路由已改为 ?id= 查询参数，
+// 不存在动态段函数映射问题，故不再打任何补丁。
+
 if (process.platform !== "win32") {
   // 官方入口：bin/index.js 内部用 process.execPath 起子进程跑真实 CLI
   await import(pathToFileURL(binEntry).href);

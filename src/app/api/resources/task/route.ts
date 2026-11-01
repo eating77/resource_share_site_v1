@@ -6,26 +6,26 @@ import { REQUIRED_SCREENSHOTS, type Task } from "@/lib/types";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-type Ctx = { params: Promise<{ resourceId: string }> };
-
-export async function GET(_request: NextRequest, ctx: Ctx) {
+export async function GET(request: NextRequest) {
   try {
-    const { resourceId } = await ctx.params;
-    const task = await getTask(resourceId);
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
+    const task = await getTask(id);
     return NextResponse.json({ ok: true, data: task });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "读取任务失败" }, { status: 500 });
   }
 }
 
-export async function PUT(request: NextRequest, ctx: Ctx) {
+export async function PUT(request: NextRequest) {
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
   if (!(await requireAdminApi())) {
     return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
   }
   try {
-    const { resourceId } = await ctx.params;
     const body = (await request.json()) as Omit<Task, "id" | "resource_id">;
-    await saveTask(resourceId, {
+    await saveTask(id, {
       enabled: Boolean(body.enabled),
       title: typeof body.title === "string" ? body.title : "完成任务",
       description: typeof body.description === "string" ? body.description : "",
