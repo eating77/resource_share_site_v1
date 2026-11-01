@@ -46,7 +46,7 @@ function makeComment(domain: string, previous?: string): string {
 export const runtime = "edge";
 
 export default function TaskPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ resourceId: string }>();
   const router = useRouter();
   const [resource, setResource] = useState<Resource | null>(null);
   const [task, setTask] = useState<Task | null>(null);
@@ -68,10 +68,10 @@ export default function TaskPage() {
     (async () => {
       try {
         const [rRes, tRes, sRes, cRes] = await Promise.all([
-          fetch(`/api/resources/${params.id}`, { cache: "no-store" }),
-          fetch(`/api/resources/${params.id}/task`, { cache: "no-store" }),
+          fetch(`/api/resources/${params.resourceId}`, { cache: "no-store" }),
+          fetch(`/api/resources/${params.resourceId}/task`, { cache: "no-store" }),
           fetch(`/api/site-settings`, { cache: "no-store" }),
-          fetch(`/api/resources/${params.id}/claim-status`, { cache: "no-store" }),
+          fetch(`/api/resources/${params.resourceId}/claim-status`, { cache: "no-store" }),
         ]);
         const r = (await rRes.json()) as { ok: boolean; data?: Resource; error?: string };
         const t = (await tRes.json()) as { ok: boolean; data?: Task | null };
@@ -88,7 +88,7 @@ export default function TaskPage() {
         setKeyword(r.data?.title || "");
         setComment(makeComment(s.data?.claim_domain || "xxx.yyy"));
         if (c.ok && c.approved) {
-          router.replace(`/resource/${params.id}/success`);
+          router.replace(`/resource/${params.resourceId}/success`);
           return;
         }
       } catch {
@@ -103,7 +103,7 @@ export default function TaskPage() {
     return () => {
       alive = false;
     };
-  }, [params.id, router]);
+  }, [params.resourceId, router]);
 
   const required = task && !task.enabled ? 0 : REQUIRED_SCREENSHOTS;
 

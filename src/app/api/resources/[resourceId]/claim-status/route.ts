@@ -6,11 +6,11 @@ export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
 /** 查询当前访客对该资源是否已满足领取条件（用于刷新页面后恢复任务状态） */
-export async function GET(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(_request: Request, ctx: { params: Promise<{ resourceId: string }> }) {
   try {
-    const { id } = await ctx.params;
+    const { resourceId } = await ctx.params;
     const visitor = getVisitorKey();
-    const approved = await isApproved(id, visitor || "__nobody__");
+    const approved = await isApproved(resourceId, visitor || "__nobody__");
     const res = NextResponse.json({ ok: true, approved });
     if (!visitor) {
       res.cookies.set(visitorCookie(makeVisitorKey()));

@@ -7,8 +7,8 @@ type ClaimData = { title: string; driveUrl: string };
 
 export const runtime = "edge";
 
-export default function SuccessPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function SuccessPage({ params }: { params: Promise<{ resourceId: string }> }) {
+  const { resourceId } = use(params);
   const router = useRouter();
   const [claim, setClaim] = useState<ClaimData | null>(null);
   const [error, setError] = useState("");
@@ -18,13 +18,13 @@ export default function SuccessPage({ params }: { params: Promise<{ id: string }
     let alive = true;
     (async () => {
       try {
-        const res = await fetch(`/api/resources/${id}/claim`, { method: "POST", cache: "no-store" });
+        const res = await fetch(`/api/resources/${ resourceId }/claim`, { method: "POST", cache: "no-store" });
         const d = await res.json();
         if (!alive) return;
         if (res.ok && d.ok && d.data) {
           setClaim(d.data);
         } else if (res.status === 403) {
-          router.replace(`/resource/${id}/task`);
+          router.replace(`/resource/${ resourceId }/task`);
           return;
         } else {
           setError(d.error || "领取信息获取失败");
@@ -38,7 +38,7 @@ export default function SuccessPage({ params }: { params: Promise<{ id: string }
     return () => {
       alive = false;
     };
-  }, [id, router]);
+  }, [resourceId, router]);
 
   return (
     <main className="task-page">
@@ -51,7 +51,7 @@ export default function SuccessPage({ params }: { params: Promise<{ id: string }
         {error && (
           <div className="empty">
             <p>{error}</p>
-            <Link className="submit-button" href={`/resource/${id}`} style={{ display: "inline-block", marginTop: 16 }}>
+            <Link className="submit-button" href={`/resource/${ resourceId }`} style={{ display: "inline-block", marginTop: 16 }}>
               返回资源详情
             </Link>
           </div>

@@ -7,9 +7,9 @@ import { TaskEntry } from "@/components/task-entry";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const [settings, resource] = await Promise.all([getSiteSettingsCached(), getResource(id)]);
+export default async function ResourceDetailPage({ params }: { params: Promise<{ resourceId: string }> }) {
+  const { resourceId } = await params;
+  const [settings, resource] = await Promise.all([getSiteSettingsCached(), getResource(resourceId)]);
   if (!resource || !resource.is_published) notFound();
   const task = await getTask(resource.id);
 

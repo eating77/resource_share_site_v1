@@ -5,18 +5,18 @@ import { requireAdminApi } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 export const runtime = "edge";
 
-type Ctx = { params: Promise<{ id: string }> };
+type Ctx = { params: Promise<{ announcementId: string }> };
 
 export async function PUT(request: NextRequest, ctx: Ctx) {
   if (!(await requireAdminApi())) {
     return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
   }
   try {
-    const { id } = await ctx.params;
+    const { announcementId } = await ctx.params;
     const body = await request.json();
     const content = typeof body?.content === "string" ? body.content.trim() : "";
     if (!content) return NextResponse.json({ ok: false, error: "公告内容不能为空" }, { status: 400 });
-    await updateAnnouncement(id, {
+    await updateAnnouncement(announcementId, {
       title: typeof body.title === "string" ? body.title.trim() : "",
       content,
       position: body.position === "home_top" || body.position === "notice" ? body.position : "notice",
@@ -33,8 +33,8 @@ export async function DELETE(_request: NextRequest, ctx: Ctx) {
     return NextResponse.json({ ok: false, error: "未登录或没有管理员权限" }, { status: 401 });
   }
   try {
-    const { id } = await ctx.params;
-    await deleteAnnouncement(id);
+    const { announcementId } = await ctx.params;
+    await deleteAnnouncement(announcementId);
     return NextResponse.json({ ok: true });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "删除公告失败" }, { status: 500 });

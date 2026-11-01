@@ -1,0 +1,101 @@
+name: Build Cloudflare Pages on Linux
+
+on:
+  push:
+    branches:
+      - feat/cloudflare-workers
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build Cloudflare Pages output
+        run: npm run pages:build
+
+      - name: Verify dynamic route registration
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+
+          const functionsDir = ".vercel/output/functions";
+          const dynamicPages = new Set();
+
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const fullPath = path.join(dir, entry.name);
+              if (!entry.isDirectory()) continue;
+              if (entry.name === ".next") {
+                const manifestPath = path.join(fullPath, "routes-manifest.json");
+                if (fs.existsSync(manifestPath)) {
+                  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+                  for (const route of manifest.dynamicRoutes || []) {
+                    dynamicPages.add(route.page);
+                  }
+                }
+              } else {
+                walk(fullPath);
+              }
+            }
+          }
+
+          walk(functionsDir);
+
+          const requiredRoutes = [
+            "/resource/[resourceId]",
+            "/category/[categoryId]",
+            "/api/resources/[resourceId]",
+            "/api/resources/[resourceId]/claim",
+          ];
+          const missingRoutes = requiredRoutes.filter((route) => !dynamicPages.has(route));
+          if (missingRoutes.length > 0) {
+            throw new Error(`Dynamic routes missing from function manifests: ${missingRoutes.join(", ")}`);
+          }
+
+          const expectedFunctionNames = new Map([
+            ["resource/[resourceId]", "resource/[resourceId]"],
+            ["category/[categoryId]", "category/[categoryId]"],
+            ["api/resources/[resourceId]", "api/resources/[resourceId]"],
+            ["api/resources/[resourceId]/claim", "api/resources/[resourceId]/claim"],
+          ]);
+          for (const [functionPath, expectedName] of expectedFunctionNames) {
+            const configPath = path.join(functionsDir, `${functionPath}.func`, ".vc-config.json");
+            const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+            if (config.name !== expectedName) {
+              throw new Error(`${functionPath} points to ${config.name}; expected ${expectedName}`);
+            }
+          }
+
+          console.log(`Verified ${requiredRoutes.length} required dynamic routes and their function targets.`);
+          NODE
+
+      - name: Upload Pages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-pages
+          path: .vercel/output/static
+          if-no-files-found: error
+          retention-days: 7
