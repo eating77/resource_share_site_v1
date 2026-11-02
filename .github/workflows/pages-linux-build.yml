@@ -105,10 +105,14 @@ jobs:
             } else {
               seen.set(real, funcName);
             }
-            const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
-            const expectedName = funcName.replace(/\.func$/, "");
-            if (config.name !== expectedName) {
-              problems.push(`${funcName} declares name "${config.name}"; expected "${expectedName}"`);
+            // next-on-pages internal functions such as _error.func may intentionally
+            // omit `name`. Enforce exact names only for the routes this app requires.
+            if (required.includes(funcName)) {
+              const config = JSON.parse(fs.readFileSync(configPath, "utf8"));
+              const expectedName = funcName.replace(/\.func$/, "");
+              if (config.name !== expectedName) {
+                problems.push(`${funcName} declares name "${config.name}"; expected "${expectedName}"`);
+              }
             }
           }
 
@@ -118,6 +122,19 @@ jobs:
 
           console.log(`Verified ${funcDirs.length} function manifests. No dynamic segments, no mis-mapped functions.`);
           NODE
+
+      - name: Deploy to Cloudflare Pages (Linux build)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          # GitHub does not allow secrets directly in step-level `if` expressions.
+          # Check the values inside the shell instead; skip cleanly when not configured.
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Cloudflare credentials are not configured; skipping automatic deploy."
+            exit 0
+          fi
+          npx wrangler pages deploy .vercel/output --project-name=resource-share-site-pages --branch=feat/cloudflare-workers --commit-dirty=true
 
       - name: Upload Pages artifact
         uses: actions/upload-artifact@v4
