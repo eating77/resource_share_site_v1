@@ -2,13 +2,12 @@
 
 import { useState } from "react";
 import type { Submission } from "@/lib/types";
-import { apiFetch, ConfirmDialog, ImageModal } from "@/components/admin-ui";
+import { apiFetch, ConfirmDialog } from "@/components/admin-ui";
 import { formatTime } from "@/lib/format";
 
 export function SubmissionsList({ initial }: { initial: Submission[] }) {
   const [items, setItems] = useState(initial);
   const [query, setQuery] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<Submission | null>(null);
   const [notice, setNotice] = useState("");
 
@@ -34,9 +33,9 @@ export function SubmissionsList({ initial }: { initial: Submission[] }) {
     <>
       <div className="panel-head" style={{ marginBottom: 14 }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: 18 }}>截图提交记录</h2>
+          <h2 style={{ margin: 0, fontSize: 18 }}>提交记录</h2>
           <p style={{ color: "#8b9c99", fontSize: 12, margin: "4px 0 0" }}>
-            当前版本采用自动通过：达到要求截图数量即放行，不代表截图内容真实。保留记录供查看异常情况。
+            只记录「资源 + 截图数量 + 提交时间」，访客上传的截图不保存、不做留存，随时可删记录。达到要求数量即自动通过。
           </p>
         </div>
       </div>
@@ -59,8 +58,7 @@ export function SubmissionsList({ initial }: { initial: Submission[] }) {
               <thead>
                 <tr>
                   <th>资源名称</th>
-                  <th>截图</th>
-                  <th>图片数</th>
+                  <th>截图数量</th>
                   <th>处理状态</th>
                   <th>提交时间</th>
                   <th style={{ width: 90 }}>操作</th>
@@ -74,15 +72,6 @@ export function SubmissionsList({ initial }: { initial: Submission[] }) {
                         {s.resource_title}
                         <small>{s.user_key.slice(0, 10)}</small>
                       </span>
-                    </td>
-                    <td>
-                      <div className="submit-imgs">
-                        {s.images.slice(0, 6).map((img, i) => (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img key={i} src={img} alt={`截图${i + 1}`} onClick={() => setPreview(img)} />
-                        ))}
-                        {s.images.length > 6 && <span style={{ alignSelf: "center", fontSize: 11, color: "#8b9c99" }}>+{s.images.length - 6}</span>}
-                      </div>
                     </td>
                     <td>{s.screenshot_count} 张</td>
                     <td>
@@ -102,7 +91,6 @@ export function SubmissionsList({ initial }: { initial: Submission[] }) {
         )}
       </div>
 
-      <ImageModal src={preview} onClose={() => setPreview(null)} />
       <ConfirmDialog
         open={Boolean(confirm)}
         title="删除提交记录"

@@ -26,7 +26,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     { href: "/admin", label: "仪表盘", icon: "◉", exact: true },
     { href: "/admin/resources", label: "资源管理", icon: "▤" },
     { href: "/admin/categories", label: "分类管理", icon: "▦" },
-    { href: "/admin/submissions", label: "截图提交记录", icon: "▧" },
+    { href: "/admin/submissions", label: "提交记录", icon: "▧" },
     { href: "/admin/appearance", label: "网站外观设置", icon: "◐" },
     { href: "/admin/announcements", label: "公告与文案", icon: "✦" },
     { href: "/admin/settings", label: "系统设置", icon: "⚙" },

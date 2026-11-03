@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSubmission, deleteSubmission, getResource, getSubmission, listSubmissions } from "@/lib/db";
 import { requireAdminApi, getVisitorKey, makeVisitorKey, visitorCookie } from "@/lib/auth";
-import { isLocalUploadUrl } from "@/lib/upload";
 import { rateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -34,9 +33,10 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * 用户端：提交任务截图记录。
- * 服务端校验：任务启用、资源存在且发布、图片均为本站上传、数量 ≥ 要求数量。
- * 达到要求即自动通过（自动通过仅代表数量与基本格式校验通过，不代表截图内容真实）。
+ * 用户端：提交任务记录。
+ * 服务端校验：任务启用、资源存在且发布、提交数量 ≥ 要求数量。
+ * 只记录「时间 + 数量 + 是否通过」，不保存截图文件（仅前端计数，不上传）。
+ * 达到要求即自动通过（自动通过仅代表数量校验通过，不代表截图内容真实）。
  */
 export async function POST(request: NextRequest) {
   try {
@@ -51,26 +51,18 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const resourceId = typeof body?.resourceId === "string" ? body.resourceId.slice(0, 64) : "";
-    const rawUrls: string[] = Array.isArray(body?.imageUrls)
-      ? (body.imageUrls as unknown[])
-          .filter((u): u is string => typeof u === "string")
-          .map((u) => u.slice(0, 2048))
-      : [];
+    const rawCount = Number(body?.imageCount);
+    const imageCount = Number.isFinite(rawCount) ? Math.floor(rawCount) : 0;
     if (!resourceId) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
-    if (rawUrls.length === 0) return NextResponse.json({ ok: false, error: "请先上传截图" }, { status: 400 });
-    if (rawUrls.length > 20) return NextResponse.json({ ok: false, error: "单次提交截图数量过多" }, { status: 400 });
-    if (!rawUrls.every(isLocalUploadUrl)) {
-      return NextResponse.json({ ok: false, error: "检测到无效的图片来源" }, { status: 400 });
-    }
+    if (imageCount <= 0) return NextResponse.json({ ok: false, error: "请先选择截图" }, { status: 400 });
+    if (imageCount > 20) return NextResponse.json({ ok: false, error: "单次提交截图数量过多" }, { status: 400 });
 
     const resource = await getResource(resourceId);
     if (!resource || !resource.is_published) {
       return NextResponse.json({ ok: false, error: "资源不存在或已下架" }, { status: 404 });
     }
 
-    // 去重：避免用同一张图重复计数
-    const imageUrls: string[] = Array.from(new Set(rawUrls));
-    const result = await createSubmission({ resourceId, userKey: visitor, imageUrls });
+    const result = await createSubmission({ resourceId, userKey: visitor, imageCount });
     const res = NextResponse.json({ ok: true, data: result });
     if (freshVisitor) res.cookies.set(visitorCookie(visitor));
     return res;

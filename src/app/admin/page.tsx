@@ -33,7 +33,7 @@ export default async function AdminDashboard() {
           <b>{categories.length}</b>
         </div>
         <div>
-          <span>截图提交记录</span>
+          <span>提交记录</span>
           <b>{submissions.length}</b>
         </div>
       </div>

@@ -344,22 +344,25 @@ const supabaseOps = {
     if (error) err("删除公告失败", error);
   },
 
-  async createSubmission(input: { resourceId: string; userKey: string; imageUrls: string[] }): Promise<{ id: string; approved: boolean; required: number; count: number }> {
+  /**
+   * 记录一次任务提交。
+   * 只写入「谁、哪个资源、提交了几张、什么时间、是否通过」，不保存截图文件本身。
+   * 图片只在访客本地用于计数，上传后会立刻丢弃，避免长期占用存储与隐私风险。
+   */
+  async createSubmission(input: { resourceId: string; userKey: string; imageCount: number }): Promise<{ id: string; approved: boolean; required: number; count: number }> {
     const srv = createServiceSupabase();
     const task = await supabaseOps.getTask(input.resourceId);
     const required = task && !task.enabled ? 0 : REQUIRED_SCREENSHOTS;
     if (required <= 0) err("该资源未启用任务配置");
-    if (input.imageUrls.length < required) err(`截图数量不足：需要 ${required} 张，已上传 ${input.imageUrls.length} 张`);
-    const { data: sub, error: e1 } = await srv
+    const count = Math.max(0, Math.floor(Number(input.imageCount) || 0));
+    if (count < required) err(`截图数量不足：需要 ${required} 张，已选择 ${count} 张`);
+    const { data: sub, error } = await srv
       .from("task_submissions")
       .insert({ resource_id: input.resourceId, user_key: input.userKey, status: "approved", screenshot_count: required })
       .select("*")
       .single();
-    if (e1) err("提交截图记录失败", e1);
-    const images = input.imageUrls.slice(0, required).map((u) => ({ submission_id: sub.id, image_url: u }));
-    const { error: e2 } = await srv.from("submission_images").insert(images);
-    if (e2) err("保存截图失败", e2);
-    return { id: sub.id, approved: true, required, count: input.imageUrls.length };
+    if (error) err("提交截图记录失败", error);
+    return { id: sub.id, approved: true, required, count };
   },
 
   async listSubmissions(): Promise<Submission[]> {
@@ -641,12 +644,13 @@ const demoOps = {
     });
   },
 
-  async createSubmission(input: { resourceId: string; userKey: string; imageUrls: string[] }): Promise<{ id: string; approved: boolean; required: number; count: number }> {
+  async createSubmission(input: { resourceId: string; userKey: string; imageCount: number }): Promise<{ id: string; approved: boolean; required: number; count: number }> {
     const st = demoLoad();
     const task = demoTaskFor(st, input.resourceId);
     const required = task && !task.enabled ? 0 : REQUIRED_SCREENSHOTS;
     if (required <= 0) throw new Error("该资源未启用任务配置");
-    if (input.imageUrls.length < required) throw new Error(`截图数量不足：需要 ${required} 张，已上传 ${input.imageUrls.length} 张`);
+    const count = Math.max(0, Math.floor(Number(input.imageCount) || 0));
+    if (count < required) throw new Error(`截图数量不足：需要 ${required} 张，已选择 ${count} 张`);
     const sub: DemoStore["submissions"][number] = {
       id: newId(),
       resource_id: input.resourceId,
@@ -654,12 +658,12 @@ const demoOps = {
       status: "approved",
       screenshot_count: required,
       created_at: new Date().toISOString(),
-      images: input.imageUrls.slice(0, required),
+      images: [],
     };
     demoSave((s) => {
       s.submissions.push(sub);
     });
-    return { id: sub.id, approved: true, required, count: input.imageUrls.length };
+    return { id: sub.id, approved: true, required, count: input.imageCount };
   },
 
   async listSubmissions(): Promise<Submission[]> {

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { REQUIRED_SCREENSHOTS, type Resource, type SiteSettings, type Task } from "@/lib/types";
 import { CopyButton } from "@/components/site";
 
-type UploadedFile = { file: File; url: string; preview: string };
+type UploadedFile = { file: File; preview: string };
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/jpg";
 const MAX_SIZE = 5 * 1024 * 1024;
@@ -130,7 +130,6 @@ export default function TaskPage() {
       }
       const newFiles: UploadedFile[] = chosen.map((f) => ({
         file: f,
-        url: "",
         preview: URL.createObjectURL(f),
       }));
       setFiles((prev) => [...prev, ...newFiles].slice(0, REQUIRED_SCREENSHOTS));
@@ -149,24 +148,10 @@ export default function TaskPage() {
     setMessage(null);
   };
 
-  const uploadAll = async (): Promise<string[]> => {
-    const urls: string[] = [];
-    for (const f of files) {
-      if (f.url) {
-        urls.push(f.url);
-        continue;
-      }
-      const fd = new FormData();
-      fd.append("file", f.file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const d = await res.json();
-      if (!res.ok || !d.ok) throw new Error(d.error || "上传失败");
-      urls.push(d.data.url);
-      setFiles((prev) => prev.map((x) => (x.preview === f.preview ? { ...x, url: d.data.url } : x)));
-    }
-    return urls;
-  };
-
+  /**
+   * 提交任务：只把「选了几张」报给服务端，图片不上传、不保存。
+   * 截图仅在本机预览用于计数，提交后即丢弃（省存储空间，也避免留下访客隐私内容）。
+   */
   const submit = async () => {
     if (!resource) return;
     if (files.length < required) {
@@ -176,12 +161,10 @@ export default function TaskPage() {
     setSubmitting(true);
     setMessage({ type: "info", text: "正在上传并提交..." });
     try {
-      const urls = await uploadAll();
-      if (urls.length < required) throw new Error("部分图片上传失败，请重试");
       const res = await fetch("/api/submissions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resourceId: resource.id, imageUrls: urls.slice(0, required) }),
+        body: JSON.stringify({ resourceId: resource.id, imageCount: files.length }),
       });
       const d = await res.json();
       if (!res.ok || !d.ok) throw new Error(d.error || "提交失败");
