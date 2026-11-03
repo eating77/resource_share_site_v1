@@ -168,15 +168,17 @@ export function ResourceGrid({
   );
 }
 
-/* ---------- 首页交互区（搜索 + 分类筛选，数据来自真实存储） ---------- */
+/* ---------- 首页交互区（公告跑马灯 + 分类筛选，数据来自真实存储） ---------- */
 export function HomeClient({
   settings,
   initialResources,
   categories,
+  announcements,
 }: {
   settings: SiteSettings;
   initialResources: Resource[];
   categories: { id: string; name: string; icon: string }[];
+  announcements: { id: string; title: string; content: string }[];
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("全部资源");
@@ -186,11 +188,11 @@ export function HomeClient({
     ? list.filter((r) => `${r.title} ${r.description} ${(r.tags || []).join(" ")} ${r.category_name}`.toLowerCase().includes(query.trim().toLowerCase()))
     : list;
 
-  const heroSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const term = query.trim();
-    router.push(term ? `/search?q=${encodeURIComponent(term)}` : "/");
-  };
+  // 公告滚动文案：拼接多条公告，首尾闭环用于无缝循环
+  const tickerText = announcements.length
+    ? announcements.map((a) => `${a.title}：${a.content}`).join("　｜　")
+    : settings.subtitle || "";
+
   return (
     <>
       <section className="hero" id="home">
@@ -205,16 +207,12 @@ export function HomeClient({
             ))}
           </h1>
           <p className="hero-sub">{settings.hero_subtitle}</p>
-          <form className="hero-search" onSubmit={heroSearch}>
-            <span>⌕</span>
-            <input
-              aria-label="搜索资源"
-              placeholder={settings.search_placeholder || "输入资源名称、关键词或分类..."}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <button type="submit">⌕ 搜索</button>
-          </form>
+          <div className="hero-ticker" aria-label="站内公告">
+            <div className="hero-ticker-track">
+              <span className="hero-ticker-item">{tickerText}</span>
+              <span className="hero-ticker-item">{tickerText}</span>
+            </div>
+          </div>
         </div>
       </section>
 

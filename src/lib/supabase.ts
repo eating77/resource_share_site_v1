@@ -1,7 +1,7 @@
 import { createBrowserClient } from "@supabase/ssr";
 import { createServerClient as createSsrServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { cookies, type UnsafeUnwrappedCookies } from "next/headers";
+import { cookies } from "next/headers";
 import { isSupabaseConfigured, supabaseAnonKey, supabaseServiceKey, supabaseUrl } from "./env";
 
 export const SCREENSHOTS_BUCKET = "task-screenshots";
@@ -15,12 +15,11 @@ export function createBrowserSupabase() {
  * 服务端客户端：使用请求 Cookie 保持会话，可安全用于服务端组件与路由处理器。
  * 注意：修改 Cookie 必须通过 @supabase/ssr 的方式，供登录/登出路由使用。
  *
- * Next.js 15 起 cookies() 改为异步 API。此处沿用官方向后兼容写法
- * （UnsafeUnwrappedCookies），以保持 createServerSupabase() 同步签名、避免波及 db.ts 的 8 处调用。
- * 迁移到 Next.js 16 前需改为 `const cookieStore = await cookies()` 并同步调整调用方。
+ * Next.js 15 起 cookies() 为异步 API，这里在函数入口 await 后得到只读 cookieStore，
+ * 再交由 @supabase/ssr 的回调同步读取，从而保持调用方语义清晰。
  */
-export function createServerSupabase() {
-  const cookieStore = cookies() as unknown as UnsafeUnwrappedCookies;
+export async function createServerSupabase() {
+  const cookieStore = await cookies();
   return createSsrServerClient(supabaseUrl(), supabaseAnonKey(), {
     cookies: {
       getAll() {

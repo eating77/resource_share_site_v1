@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
-    let visitor = getVisitorKey();
+    let visitor = await getVisitorKey();
     const freshVisitor = !visitor;
     if (freshVisitor) visitor = makeVisitorKey();
 

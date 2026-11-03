@@ -41,7 +41,7 @@ export default function AdminLogin() {
       <div className="login-box">
         <Link href="/" className="brand">
           <span className="brand-mark">☁</span>
-          <span>拾集资源库后台</span>
+          <span>小紫资源库后台</span>
         </Link>
         <h1>管理员登录</h1>
         <p>{demo ? "演示模式账号：admin@demo.local / admin123456" : "请使用在 Supabase 中创建的管理员账号登录"}</p>

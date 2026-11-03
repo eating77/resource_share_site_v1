@@ -13,11 +13,12 @@ export default async function Home() {
   ]);
   const topAnnouncements = announcements.filter((a) => a.position === "home_top");
   const noticeAnnouncements = announcements.filter((a) => a.position === "notice");
+  const tickerAnnouncements = announcements.map((a) => ({ id: a.id, title: a.title, content: a.content }));
 
   return (
     <main>
       <SiteHeader settings={settings} />
-      <HomeClient settings={settings} initialResources={allResources} categories={categories} />
+      <HomeClient settings={settings} initialResources={allResources} categories={categories} announcements={tickerAnnouncements} />
       {topAnnouncements.map((a) => (
         <section className="notice top-notice" key={a.id}>
           <span>📌</span>

@@ -1,4 +1,4 @@
-import { cookies, type UnsafeUnwrappedCookies } from "next/headers";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabase, isSupabaseConfigured } from "./supabase";
 import { demoCheckToken, demoSetToken, demoVerifyPassword } from "./db";
@@ -23,7 +23,7 @@ function demoModeAllowed(): boolean {
 export async function getAdminEmail(): Promise<string | null> {
   if (isSupabaseConfigured()) {
     try {
-      const sb = createServerSupabase();
+      const sb = await createServerSupabase();
       const { data } = await sb.auth.getSession();
       if (!data.session) return null;
       const { data: row } = await sb
@@ -37,7 +37,7 @@ export async function getAdminEmail(): Promise<string | null> {
     }
   }
   if (!demoModeAllowed()) return null;
-  const token = (cookies() as unknown as UnsafeUnwrappedCookies).get(ADMIN_COOKIE)?.value;
+  const token = (await cookies()).get(ADMIN_COOKIE)?.value;
   return demoCheckToken(token) ? "admin@demo.local" : null;
 }
 
@@ -63,7 +63,7 @@ export async function adminLogin(email: string, password: string): Promise<{ ok:
   const em = email.trim().toLowerCase();
   if (!em || !password) return { ok: false, error: "请输入邮箱和密码" };
   if (isSupabaseConfigured()) {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.auth.signInWithPassword({ email: em, password });
     if (error || !data.session) return { ok: false, error: "邮箱或密码错误" };
     // 校验是否为管理员
@@ -97,7 +97,7 @@ export async function adminLogin(email: string, password: string): Promise<{ ok:
 export async function adminLogout() {
   if (isSupabaseConfigured()) {
     try {
-      const sb = createServerSupabase();
+      const sb = await createServerSupabase();
       await sb.auth.signOut();
     } catch {
       // 忽略
@@ -108,9 +108,9 @@ export async function adminLogout() {
   return { ok: true };
 }
 
-/** 获取当前匿名用户标识（领取流程用），无则创建 */
-export function getVisitorKey(): string {
-  const store = cookies() as unknown as UnsafeUnwrappedCookies;
+/** 获取当前匿名用户标识（领取流程用），无则返回空字符串 */
+export async function getVisitorKey(): Promise<string> {
+  const store = await cookies();
   const existing = store.get(VID_COOKIE)?.value;
   if (existing) return existing;
   return "";

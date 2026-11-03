@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     const id = request.nextUrl.searchParams.get("id");
     if (!id) return NextResponse.json({ ok: false, error: "缺少资源标识" }, { status: 400 });
-    const visitor = getVisitorKey();
+    const visitor = await getVisitorKey();
     const approved = await isApproved(id, visitor || "__nobody__");
     const res = NextResponse.json({ ok: true, approved });
     if (!visitor) {

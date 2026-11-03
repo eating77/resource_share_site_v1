@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { REQUIRED_SCREENSHOTS, type Category, type Resource, type Task } from "@/lib/types";
 import { apiFetch, StatusInline, Switch, TagInput } from "@/components/admin-ui";
@@ -51,6 +51,8 @@ export function ResourceForm({
   const [status, setStatus] = useState<{ type: "success" | "error" | "info" | ""; text: string }>({ type: "", text: "" });
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [iconUploading, setIconUploading] = useState(false);
+  const iconInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
@@ -70,6 +72,31 @@ export function ResourceForm({
   const setT = <K extends keyof Task>(key: K, value: Task[K]) => {
     setTaskForm((t) => ({ ...t, [key]: value }));
     setDirty(true);
+  };
+
+  // 上传资源图标图片（复用 /api/upload，结果写入 cover_url）
+  const uploadIcon = async (file: File) => {
+    setIconUploading(true);
+    setStatus({ type: "info", text: "正在上传图标..." });
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const d = await res.json();
+      if (!res.ok || !d.ok) throw new Error(d.error || "上传失败");
+      set("cover_url", d.data.url);
+      setStatus({ type: "success", text: "图标上传成功" });
+    } catch (e) {
+      setStatus({ type: "error", text: e instanceof Error ? e.message : "图标上传失败" });
+    } finally {
+      setIconUploading(false);
+      if (iconInputRef.current) iconInputRef.current.value = "";
+    }
+  };
+
+  const onIconPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) uploadIcon(f);
   };
 
   const save = async () => {
@@ -136,8 +163,40 @@ export function ResourceForm({
             <input type="text" value={form.cover_emoji || ""} maxLength={8} onChange={(e) => set("cover_emoji", e.target.value)} placeholder="📦" />
           </div>
           <div className="field full">
-            <label>封面图片 URL（可选，留空则使用 Emoji）</label>
-            <input type="url" value={form.cover_url || ""} onChange={(e) => set("cover_url", e.target.value)} placeholder="https://... 或 /uploads/xxx.png" />
+            <label>
+              资源图标图片 <span className="hint">上传截图/图片作为资源图标，替代 Emoji 展示，更醒目</span>
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <input
+                ref={iconInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/jpg"
+                onChange={onIconPick}
+                style={{ display: "none" }}
+                id="icon-upload"
+              />
+              <button
+                type="button"
+                className="btn small"
+                onClick={() => iconInputRef.current?.click()}
+                disabled={iconUploading}
+              >
+                {iconUploading ? "上传中..." : form.cover_url ? "更换图标" : "上传图标"}
+              </button>
+              {form.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={form.cover_url} alt="图标预览" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, border: "1px solid #e3efed" }} />
+              ) : (
+                <span style={{ fontSize: 13, color: "#8b9c99" }}>未上传，将使用 Emoji</span>
+              )}
+            </div>
+            <input
+              type="url"
+              value={form.cover_url || ""}
+              onChange={(e) => set("cover_url", e.target.value)}
+              placeholder="https://... 或 /uploads/xxx.png（也可点上方按钮上传）"
+              style={{ marginTop: 8 }}
+            />
           </div>
           <div className="field full">
             <label>资源简介</label>

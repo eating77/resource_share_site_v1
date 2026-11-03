@@ -124,7 +124,7 @@ function pickCategoryName(rel: unknown): string | undefined {
 
 const supabaseOps = {
   async getSiteSettings(): Promise<SiteSettings> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.from("site_settings").select("value").eq("key", "site").maybeSingle();
     if (error) err("读取网站设置失败", error);
     return { ...DEFAULT_SETTINGS, ...((data?.value as Partial<SiteSettings>) || {}) };
@@ -139,7 +139,7 @@ const supabaseOps = {
   },
 
   async listCategories(): Promise<Category[]> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.from("categories").select("*").order("sort_order", { ascending: true }).order("name");
     if (error) err("读取分类失败", error);
     return (data || []) as Category[];
@@ -182,7 +182,7 @@ const supabaseOps = {
   },
 
   async listResources(opts: ResourceListOptions): Promise<Resource[]> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     let q = sb.from("resources").select("*, categories(name)");
     if (opts.publishedOnly) q = q.eq("is_published", true);
     if (opts.homeOnly) q = q.eq("is_home", true);
@@ -211,7 +211,7 @@ const supabaseOps = {
   },
 
   async getResource(id: string): Promise<Resource | null> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.from("resources").select("*, categories(name)").eq("id", id).maybeSingle();
     if (error) err("读取资源失败", error);
     if (!data) return null;
@@ -272,12 +272,12 @@ const supabaseOps = {
   },
 
   async incrementViews(id: string): Promise<void> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     await sb.rpc("increment_views", { row_id: id });
   },
 
   async getTask(resourceId: string): Promise<Task | null> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.from("tasks").select("*").eq("resource_id", resourceId).maybeSingle();
     if (error) err("读取任务失败", error);
     if (!data) return null;
@@ -309,7 +309,7 @@ const supabaseOps = {
   },
 
   async listAnnouncements(opts: { position?: string; enabledOnly?: boolean } = {}): Promise<Announcement[]> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     let q = sb.from("announcements").select("*");
     if (opts.position) q = q.eq("position", opts.position);
     if (opts.enabledOnly) q = q.eq("enabled", true);
@@ -363,7 +363,7 @@ const supabaseOps = {
   },
 
   async listSubmissions(): Promise<Submission[]> {
-    const sb = createServerSupabase();
+    const sb = await createServerSupabase();
     const { data, error } = await sb.from("task_submissions").select("*").order("created_at", { ascending: false }).limit(200);
     if (error) err("读取提交记录失败", error);
     const rows = (data || []) as { id: string; resource_id: string; user_key: string; status: string; screenshot_count: number; created_at: string }[];

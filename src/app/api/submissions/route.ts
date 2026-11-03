@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    let visitor = getVisitorKey();
+    let visitor = await getVisitorKey();
     const freshVisitor = !visitor;
     if (freshVisitor) visitor = makeVisitorKey();
 

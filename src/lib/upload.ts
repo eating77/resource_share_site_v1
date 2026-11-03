@@ -27,7 +27,7 @@ function extname(name: string): string {
 function detectImageType(bytes: Uint8Array): string | null {
   if (bytes.length < 12) return null;
   // JPEG: FF D8 FF
-  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpg";
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpeg";
   // PNG: 89 50 4E 47
   if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "png";
   // WEBP: RIFF....WEBP
@@ -42,6 +42,24 @@ function detectImageType(bytes: Uint8Array): string | null {
 }
 
 /**
+ * 把检测结果映射为标准 MIME 与存储扩展名。
+ * 检测返回的是统一别名（jpeg/png/webp/gif），这里统一转为标准 MIME
+ * （如 jpeg → image/jpeg），避免把非标准的 image/jpg 传给 Supabase 而被拒。
+ */
+const MIME_BY_TYPE: Record<string, string> = {
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
+const EXT_BY_TYPE: Record<string, string> = {
+  jpeg: ".jpg",
+  png: ".png",
+  webp: ".webp",
+  gif: ".gif",
+};
+
+/**
  * 保存一张截图。Supabase 模式上传至私有存储桶；演示模式写入 public/uploads。
  * 返回可公开访问的 URL。
  */
@@ -52,14 +70,15 @@ export async function saveScreenshotImage(data: Uint8Array, originalName: string
   if (data.byteLength > MAX_UPLOAD_BYTES) throw new Error("图片大小超过 5MB 限制");
   const detected = detectImageType(data);
   if (!detected) throw new Error("文件内容不是有效的图片，请重新选择");
-  const finalExt = detected === "jpg" ? ".jpg" : `.${detected}`;
+  const finalExt = EXT_BY_TYPE[detected];
+  const contentType = MIME_BY_TYPE[detected] || `image/${detected}`;
 
   if (isSupabaseConfigured()) {
     const name = `${crypto.randomUUID()}${finalExt}`;
     const sb = createServiceSupabase();
     const { error } = await sb.storage
       .from(SCREENSHOTS_BUCKET)
-      .upload(name, data, { contentType: `image/${detected}`, upsert: false });
+      .upload(name, data, { contentType, upsert: false });
     if (error) throw new Error("上传到云端存储失败：" + error.message);
     return `${supabaseUrl()}/storage/v1/object/public/${SCREENSHOTS_BUCKET}/${name}`;
   }

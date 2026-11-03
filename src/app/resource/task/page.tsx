@@ -8,8 +8,15 @@ import { CopyButton } from "@/components/site";
 
 type UploadedFile = { file: File; url: string; preview: string };
 
-const ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/jpg";
 const MAX_SIZE = 5 * 1024 * 1024;
+
+// 归一化 MIME：浏览器对 .jpg 文件常上报非标准的 image/jpg，统一按 image/jpeg 处理
+function normalizeMime(type: string): string {
+  const t = (type || "").toLowerCase();
+  if (t === "image/jpg") return "image/jpeg";
+  return t;
+}
 
 /* ---- 可复制文案：每次复制都换一批随机词，避免平台按重复文案拦截 ---- */
 const COPY_WORDS = [
@@ -113,7 +120,10 @@ export default function TaskPage() {
       const chosen = Array.from(e.target.files || []);
       e.target.value = "";
       if (chosen.length === 0) return;
-      const bad = chosen.filter((f) => !f.type.startsWith("image/") || !ACCEPT.includes(f.type) || f.size > MAX_SIZE);
+      const bad = chosen.filter((f) => {
+        const mime = normalizeMime(f.type);
+        return !mime.startsWith("image/") || !ACCEPT.includes(mime) || f.size > MAX_SIZE;
+      });
       if (bad.length > 0) {
         setMessage({ type: "error", text: `${bad.length} 个文件不符合要求（仅支持 JPG/PNG/WEBP/GIF，且每个不超过 5MB）` });
         return;
@@ -414,7 +424,7 @@ export default function TaskPage() {
 
         <div className="task-footer">
           <Link href="/">返回首页</Link>
-          <span>© {s.name || "拾集资源库"}</span>
+          <span>© {s.name || "小紫资源库"}</span>
         </div>
       </div>
 

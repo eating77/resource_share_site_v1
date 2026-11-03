@@ -84,7 +84,7 @@ export function AppearanceForm({ settings }: { settings: SiteSettings }) {
     setDirty(true);
   };
 
-  const color = (v: string) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : "#109b83");
+  const color = (v: string) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : "#7c3aed");
 
   return (
     <>

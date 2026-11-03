@@ -23,8 +23,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   let demoBanner = "";
   try {
     const s = await getSiteSettingsCached();
-    const primary = /^#[0-9a-fA-F]{6}$/.test(s.primary_color) ? s.primary_color : "#109b83";
-    const accent = /^#[0-9a-fA-F]{6}$/.test(s.accent_color) ? s.accent_color : "#087b6a";
+    const primary = /^#[0-9a-fA-F]{6}$/.test(s.primary_color) ? s.primary_color : "#7c3aed";
+    const accent = /^#[0-9a-fA-F]{6}$/.test(s.accent_color) ? s.accent_color : "#6d28d9";
     const button = /^#[0-9a-fA-F]{6}$/.test(s.button_color) ? s.button_color : primary;
     themeVars = `:root{--primary:${primary};--primary-dark:${accent};--button:${button};}`;
   } catch {

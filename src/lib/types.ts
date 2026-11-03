@@ -118,7 +118,7 @@ export type SiteSettings = {
 };
 
 export const DEFAULT_SETTINGS: SiteSettings = {
-  name: "拾集资源库",
+  name: "小紫资源库",
   subtitle: "精选优质资源 · 免费领取",
   logo: "☁",
   logo_url: "",
@@ -129,9 +129,9 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   contact: "",
   kefu_text: "联系客服",
   kefu_url: "",
-  primary_color: "#109b83",
-  accent_color: "#087b6a",
-  button_color: "#109b83",
+  primary_color: "#7c3aed",
+  accent_color: "#6d28d9",
+  button_color: "#7c3aed",
   hero_title: "海量优质资源\n一站式免费领取",
   hero_subtitle: "学习资料、软件工具、实用模板……精选整理，持续更新，帮你提升效率，收获更多可能！",
   search_placeholder: "输入资源名称、关键词或分类...",

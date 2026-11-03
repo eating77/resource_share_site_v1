@@ -119,7 +119,7 @@ export function TagInput({ value, onChange }: { value: string[]; onChange: (v: s
 
 /* 颜色选择：取色器 + 十六进制输入框 */
 export function ColorField({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
-  const normalized = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#109b83";
+  const normalized = /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#7c3aed";
   return (
     <div className="field">
       <label>{label}</label>
@@ -132,7 +132,7 @@ export function ColorField({ value, onChange, label }: { value: string; onChange
           type="text"
           value={value}
           maxLength={7}
-          placeholder="#109b83"
+          placeholder="#7c3aed"
           onChange={(e) => onChange(e.target.value)}
           aria-label={`${label}十六进制输入`}
         />

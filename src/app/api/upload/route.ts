@@ -8,7 +8,7 @@ export const runtime = "edge";
 
 /** 截图上传接口：仅接受图片，服务端校验格式魔数与大小，返回可访问 URL */
 export async function POST(request: NextRequest) {
-  const visitor = getVisitorKey();
+  const visitor = await getVisitorKey();
   const limitKey = `upload:${visitor || clientIp(request)}`;
   const limited = rateLimit(limitKey, 30, 5 * 60 * 1000);
   if (!limited.ok) return tooManyRequests(limited.retryAfter);
